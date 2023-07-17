@@ -17,6 +17,7 @@ DEBUG_R = 15
 """ Suppress UMAP and numpy warnings. """
 
 import numba
+import numpy as np
 import warnings
 
 warnings.filterwarnings(
@@ -865,6 +866,13 @@ class IterativeClustering:
                     0, 5))
             return self.interface.num.linspace(0, 5, 6)
 
+        if self.clu_algo == 'leiden':
+            logging.log(DEBUG_R, 
+                'Resolution range guess: [{:.5f},{:.5f}]'.format(
+                    0.05, 0.5))
+            return np.linspace(0.05, 0.5, 10)
+
+
         if self.clu_algo  in ['DBSCAN', 'SNN']:
             ref = self._elbow(pj)
             logging.log(DEBUG_R, 
@@ -948,6 +956,13 @@ class IterativeClustering:
             return self.interface.cluster_louvain(pj,
                 resolution=cparm)
             
+        if self.clu_algo == 'leiden':
+            import leidenalg as la
+            import igraph as ig
+            G = ig.Graph.Adjacency(pj)
+            partition = la.find_partition(G, la.CPMVertexPartition, resolution_parameter=cparm)
+            return partition.membership
+
         if self.clu_algo == 'HDBSCAN':
             clu_algo = HDBSCAN(
                 algorithm=algorithm,
@@ -1101,6 +1116,8 @@ class IterativeClustering:
                 to_cluster=1-self.snn(pj,nn)
                 if self.gpu:
                     to_cluster=self.interface.build_graph(to_cluster)
+            elif self.clu_algo == 'leiden':
+                to_cluster=1-self.snn(pj,nn)
             else:
                 to_cluster=pj
 
@@ -1332,6 +1349,8 @@ class IterativeClustering:
                         to_cluster=1-self.snn(pj,nn)
                         if self.gpu:
                             to_cluster=self.interface.build_graph(to_cluster)
+                    elif self.clu_algo == 'leiden':
+                        to_cluster=1-self.snn(pj,nn)
                     else:
                         to_cluster=pj
 
