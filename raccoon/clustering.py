@@ -958,9 +958,7 @@ class IterativeClustering:
             
         if self.clu_algo == 'leiden':
             import leidenalg as la
-            import igraph as ig
-            G = ig.Graph.Adjacency(pj)
-            partition = la.find_partition(G, la.CPMVertexPartition, resolution_parameter=cparm)
+            partition = la.find_partition(pj, la.RBConfigurationVertexPartition, resolution_parameter=cparm)
             return partition.membership
 
         if self.clu_algo == 'HDBSCAN':
@@ -1117,7 +1115,11 @@ class IterativeClustering:
                 if self.gpu:
                     to_cluster=self.interface.build_graph(to_cluster)
             elif self.clu_algo == 'leiden':
-                to_cluster=1-self.snn(pj,nn)
+                # to_cluster=1-self.snn(pj,nn)
+                import scanpy as sc
+                adata = sc.AnnData(pj)
+                sc.pp.neighbors(adata)
+                to_cluster = get_igraph_from_adjacency(adata.uns['neighbors']['connectivities'], directed=True)
             else:
                 to_cluster=pj
 
@@ -1350,7 +1352,11 @@ class IterativeClustering:
                         if self.gpu:
                             to_cluster=self.interface.build_graph(to_cluster)
                     elif self.clu_algo == 'leiden':
-                        to_cluster=1-self.snn(pj,nn)
+                        import scanpy as sc
+                        adata = sc.AnnData(pj)
+                        sc.pp.neighbors(adata)
+                        to_cluster = get_igraph_from_adjacency(adata.uns['neighbors']['connectivities'], directed=True)
+                        # to_cluster=1-self.snn(pj,nn)
                     else:
                         to_cluster=pj
 
