@@ -58,6 +58,27 @@ except ImportError:
 
 __version__ = "0.4.0"
 
+# borrowed function
+def get_igraph_from_adjacency(adjacency, directed=None):
+    """Get igraph graph from adjacency matrix."""
+    import igraph as ig
+    sources, targets = adjacency.nonzero()
+    weights = adjacency[sources, targets]
+    if isinstance(weights, np.matrix):
+        weights = weights.A1
+    g = ig.Graph(directed=directed)
+    g.add_vertices(adjacency.shape[0])  # this adds adjacency.shap[0] vertices
+    g.add_edges(list(zip(sources, targets)))
+    try:
+        g.es['weight'] = weights
+    except:
+        pass
+    if g.vcount() != adjacency.shape[0]:
+        print('The constructed graph has only {} nodes. '
+                  'Your adjacency matrix contained redundant nodes.'
+                  .format(g.vcount()))
+    return g 
+
 class DataGlobal:
 
     """ Static container for the input data to be filled
